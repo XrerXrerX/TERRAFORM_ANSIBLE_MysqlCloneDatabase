@@ -1,0 +1,91 @@
+# @format
+
+# tasks file for mysql_client
+
+- name: Tampilkan inventory_hostname
+  debug:
+    msg: "Hostname: {{ group_names }}"
+
+- name: Set bind-address to 0.0.0.0
+  lineinfile:
+    path: /etc/mysql/mysql.conf.d/mysqld.cnf
+    regexp: "^bind-address"
+    line: "bind-address = 0.0.0.0"
+  notify: Restart mysql
+
+- name: Wait for MySQL port to be open
+  wait_for:
+    host: "{{ mysql_source_private_ip }}"
+    port: 3306
+    state: started
+    timeout: 30
+
+- name: Stop replication before reconfiguration (safe stop)
+  community.mysql.mysql_replication:
+    login_user: root
+    login_unix_socket: /var/run/mysqld/mysqld.sock
+    mode: stopreplica
+  ignore_errors: yes
+
+- name: Reset all replication settings on clone
+  community.mysql.mysql_replication:
+    login_user: root
+    login_unix_socket: /var/run/mysqld/mysqld.sock
+    mode: resetreplicaall
+  ignore_errors: yes
+
+- name: Configure slave (only on clone)
+  community.mysql.mysql_replication:
+    login_user: root
+    login_unix_socket: /var/run/mysqld/mysqld.sock
+    mode: changeprimary
+    primary_host: "{{ hostvars[groups['mysql_master'][0]]['ansible_host'] | default(groups['mysql_master'][0]) }}"
+    primary_user: "{{ mysql_repl_user }}"
+    primary_password: "{{ mysql_repl_password }}"
+    primary_log_file: "{{ hostvars[groups['mysql_master'][0]]['binlog_file'] }}"
+    primary_log_pos: "{{ hostvars[groups['mysql_master'][0]]['binlog_pos'] }}"
+
+- name: Configure MySQL replication settings
+  blockinfile:
+    path: /etc/mysql/mysql.conf.d/mysqld.cnf # file terpisah lebih aman
+    create: yes
+    block: |
+      server-id = {{ (inventory_hostname == 'mysql_master') | ternary(1, 2) }}
+      log_bin = /var/log/mysql/mysql-bin.log
+      binlog_do_db = "{{ test_db_name }}"
+  notify: Restart mysql
+
+- name: Start slave (only on clone)
+  community.mysql.mysql_replication:
+    login_user: root
+    login_unix_socket: /var/run/mysqld/mysqld.sock
+    mode: startreplica
+
+- name: Test connection to MySQL Source
+  command: >
+    mysql -h {{ mysql_source_private_ip }} -u {{ mysql_repl_user }} -p{{ mysql_repl_password }} -e "SHOW DATABASES;"
+  register: test_conn
+  changed_when: false
+  failed_when: test_conn.rc != 0
+
+- name: Show connection test result
+  debug:
+    var: test_conn.stdout_lines
+
+- name: Show slave status
+  command: mysql -uroot -e "SHOW REPLICA STATUS\\G"
+  register: replica_status
+
+- name: Display slave IO/SQL running status
+  debug:
+    msg: >-
+      {% set io_line = replica_status.stdout_lines | select('search', 'Slave_IO_Running') | list %}
+      {% set sql_line = replica_status.stdout_lines | select('search', 'Slave_SQL_Running') | list %}
+      Slave_IO_Running: {{ io_line[0] if io_line else 'Not found' }},
+      Slave_SQL_Running: {{ sql_line[0] if sql_line else 'Not found' }}
+  when: "'mysql_clone' in group_names and replica_status is defined and replica_status.stdout_lines is defined"
+
+- name: Restart MySQL service
+  ansible.builtin.service:
+    name: mysql
+    state: restarted

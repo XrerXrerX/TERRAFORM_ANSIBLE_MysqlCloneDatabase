@@ -1,0 +1,25 @@
+# @format
+---
+# handlers file for mysql_replication
+- name: Restart mysql
+  service:
+    name: mysql
+    state: restarted
+
+- name: Reload systemd
+  command: systemctl daemon-reload
+
+- name: Reload nginx
+  service:
+    name: nginx
+    state: reloaded
+
+- name: Restart nginx
+  service:
+    name: nginx
+    state: restarted
+
+- name: Restart php-fpm
+  service:
+    name: php{{ php_fpm_version }}-fpm
+    state: restarted

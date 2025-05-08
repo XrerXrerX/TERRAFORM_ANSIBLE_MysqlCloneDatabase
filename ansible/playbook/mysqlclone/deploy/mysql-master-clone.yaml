@@ -1,0 +1,25 @@
+# @format
+---
+- hosts: mysql
+  become: yes
+  tasks:
+    - name: Install mysql
+      include_role:
+        name: mysql_replication
+        tasks_from: mysql_install.yml
+
+- hosts: mysql_master
+  become: yes
+  tasks:
+    - name: Install mysql
+      include_role:
+        name: mysql_replication
+        tasks_from: mysql.yml
+
+- hosts: mysql_clone
+  become: yes
+  tasks:
+    - name: Install mysql
+      include_role:
+        name: mysql_replication
+        tasks_from: client_mysql.yml

@@ -1,0 +1,72 @@
+# @format
+
+# tasks file for mysql_replication
+- name: Tampilkan inventory_hostname
+  debug:
+    msg: "Hostname: {{ group_names }}"
+
+- name: Create replication user
+  community.mysql.mysql_user:
+    login_user: root
+    name: "{{ mysql_repl_user }}"
+    password: "{{ mysql_repl_password }}"
+    priv: "*.*:REPLICATION SLAVE"
+    host: "{{ mysql_user_host_replica }}"
+    state: present
+    # login_password: "{{ mysql_root_password }}"
+    # atau jika root MySQL tanpa password, bisa hilangkan login_password
+    login_unix_socket: /var/run/mysqld/mysqld.sock
+  ignore_errors: yes
+
+- name: Flush MySQL privileges
+  community.mysql.mysql_user:
+    name: "{{ mysql_repl_user }}"
+    host: "%"
+    state: present
+    priv: "*.*:REPLICATION SLAVE"
+    login_user: root
+    login_unix_socket: /var/run/mysqld/mysqld.sock
+    check_implicit_admin: true
+
+- name: Set bind-address to 0.0.0.0
+  lineinfile:
+    path: /etc/mysql/mysql.conf.d/mysqld.cnf
+    regexp: "^bind-address"
+    line: "bind-address = 0.0.0.0"
+  notify: Restart mysql
+
+- name: Configure MySQL replication settings
+  blockinfile:
+    path: /etc/mysql/mysql.conf.d/mysqld.cnf # file terpisah lebih aman
+    create: yes
+    block: |
+      server-id = {{ ('mysql_master' in group_names) | ternary(1, 2) }}
+      log_bin = /var/log/mysql/mysql-bin.log
+      binlog_do_db = "{{ test_db_name }}"
+  notify: Restart mysql
+
+# == SLAVE SETUP ==
+
+- name: Force restart mysql immediately after config
+  service:
+    name: mysql
+    state: restarted
+
+- name: Wait for MySQL to be fully ready
+  wait_for:
+    port: 3306
+    delay: 5
+    timeout: 30
+
+- name: Get master status (only on source)
+  command: mysql -uroot -e "SHOW MASTER STATUS\\G"
+  register: mysql_master_status_output
+
+- set_fact:
+    binlog_file: "{{ mysql_master_status_output.stdout_lines | select('search', 'File:') | first | regex_replace('File: ', '') }}"
+    binlog_pos: "{{ mysql_master_status_output.stdout_lines | select('search', 'Position:') | first | regex_replace('Position: ', '') }}"
+
+- name: Restart MySQL service
+  ansible.builtin.service:
+    name: mysql
+    state: restarted

@@ -1,0 +1,9 @@
+# @format
+---
+- hosts: nginx_public_bastion
+  become: yes
+  tasks:
+    - name: phpmyadmin to access ip private
+      include_role:
+        name: mysql_replication
+        tasks_from: bastion_phpmyadmin.yml

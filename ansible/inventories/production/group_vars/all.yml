@@ -1,0 +1,38 @@
+# @format
+
+#Mysql master
+mysql_username: client1234
+mysql_password: passclient1234
+mysql_user_host_localhost: localhost
+
+#mysql master replica user
+mysql_repl_user: replica_user
+mysql_repl_password: replica_password123
+# mysql_root_password: rootpass123
+mysql_user_host_replica: yourdnsprivate #clone host
+#client
+
+blowfish_secret: 123456 #random blowfish untuk phpmyadmin
+
+#untuk phpmyadmin dan bastion ip
+bastion_user: bastion_user
+bastion_password: bastion_password
+bastion_private_ip: YourBastionPrivateIp # bastion private ip
+
+mysql_source_private_ip: YourPrivaeMysqlMaster # Output dari Terraform ip source node
+
+#db master
+test_db_name: test_db #yourDatabase
+
+# vars file for phpmyadmin
+private_ip_mysql: 10.0.2.17 # your private ip mysql master
+private_ip_mysql_second: 10.0.3.217 #your orivate ip mysql clone
+php_fpm_version: "8.3" #php_version
+
+phpmyadmin_allowed_ips:
+  - 37.19.205.165 #your own ip
+  - 127.0.0.1 #localhost
+  - 10.0.2.11 #bastionIP pricvate
+  - 21.21.21.21 #bastionIP public
+
+phpmyadmin_server_name: "{{ ansible_host }}" # otomatis isi dengan IP public host

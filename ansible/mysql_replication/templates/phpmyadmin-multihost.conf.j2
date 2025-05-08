@@ -1,0 +1,23 @@
+<?php
+$cfg['blowfish_secret'] = '{{ blowfish_secret }}'; // Random string
+
+$i = 0;
+
+// Master
+$i++;
+$cfg['Servers'][$i]['host'] = '{{ mysql_source_private_ip }}';
+$cfg['Servers'][$i]['port'] = '3306';
+$cfg['Servers'][$i]['auth_type'] = 'cookie';
+$cfg['Servers'][$i]['verbose'] = 'MySQL Master';
+
+// Clone
+$i++;
+$cfg['Servers'][$i]['host'] = '{{ private_ip_mysql_second }}';
+$cfg['Servers'][$i]['port'] = '3306';
+$cfg['Servers'][$i]['auth_type'] = 'cookie';
+$cfg['Servers'][$i]['verbose'] = 'MySQL Clone';
+
+$cfg['DefaultLang'] = 'en';
+$cfg['ServerDefault'] = 1;
+$cfg['UploadDir'] = '';
+$cfg['SaveDir'] = '';

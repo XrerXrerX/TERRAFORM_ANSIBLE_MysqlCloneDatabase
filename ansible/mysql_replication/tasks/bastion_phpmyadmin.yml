@@ -1,0 +1,108 @@
+# @format
+---
+- name: Install nginx first!
+  apt:
+    name:
+      - nginx
+    state: present
+    update_cache: yes
+
+- name: Ensure nginx is started
+  service:
+    name: nginx
+    state: started
+    enabled: yes
+
+- name: Add PHP PPA ondrej (optional)
+  apt_repository:
+    repo: ppa:ondrej/php
+    state: present
+    update_cache: yes
+
+- name: Install PHP {{ php_fpm_version }} dan ekstensi
+  apt:
+    name:
+      - php{{ php_fpm_version }}
+      - php{{ php_fpm_version }}-fpm
+      - php{{ php_fpm_version }}-mysql
+      - php{{ php_fpm_version }}-mbstring
+      - php{{ php_fpm_version }}-zip
+      - php{{ php_fpm_version }}-gd
+      - php{{ php_fpm_version }}-curl
+      - php{{ php_fpm_version }}-xml
+      - php{{ php_fpm_version }}-ctype
+      - php{{ php_fpm_version }}-bcmath
+      - php{{ php_fpm_version }}-intl
+      - php{{ php_fpm_version }}-opcache
+    state: present
+    update_cache: yes
+
+- name: Preconfigure phpMyAdmin non-interactive install
+  debconf:
+    name: phpmyadmin
+    question: "{{ item.question }}"
+    value: "{{ item.value }}"
+    vtype: "{{ item.vtype }}"
+  loop:
+    - {
+        question: "phpmyadmin/dbconfig-install",
+        value: "false",
+        vtype: "boolean",
+      }
+    - {
+        question: "phpmyadmin/reconfigure-webserver",
+        value: "apache2",
+        vtype: "string",
+      }
+
+- name: Install phpMyAdmin
+  apt:
+    name: phpmyadmin
+    state: present
+
+- name: Ensure phpMyAdmin is installed and directory exists
+  stat:
+    path: /usr/share/phpmyadmin
+  register: phpmyadmin_dir
+
+- name: Create nginx web root if not exists
+  file:
+    path: /var/www/html
+    state: directory
+    mode: "0755"
+
+- name: Link phpMyAdmin to nginx web root (only if installed)
+  file:
+    src: /usr/share/phpmyadmin
+    dest: /var/www/html/phpmyadmin
+    state: link
+  when: phpmyadmin_dir.stat.exists
+
+- name: Deploy nginx config for phpMyAdmin
+  template:
+    src: bastion_phpmyadmin.j2
+    dest: /etc/nginx/sites-available/bastion_phpmyadmin
+    mode: 0644
+
+- name: Enable phpmyadmin nginx site
+  file:
+    src: /etc/nginx/sites-available/bastion_phpmyadmin
+    dest: /etc/nginx/sites-enabled/bastion_phpmyadmin
+    state: link
+    force: true
+
+- name: Remove default nginx site
+  file:
+    path: /etc/nginx/sites-enabled/default
+    state: absent
+
+- name: Deploy phpMyAdmin config with 2 MySQL servers
+  template:
+    src: phpmyadmin-multihost.conf.j2
+    dest: /etc/phpmyadmin/config.inc.php
+    owner: root
+    group: root
+    mode: 0644
+  notify:
+    - Restart nginx
+    - Restart php-fpm

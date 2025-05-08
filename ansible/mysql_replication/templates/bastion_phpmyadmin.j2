@@ -1,0 +1,25 @@
+server {
+    listen 80;
+    server_name _;
+
+    root /var/www/html;
+    index index.php index.html index.htm;
+
+    location / {
+        try_files $uri $uri/ =404;
+    }
+
+    location ~ \.php$ {
+        include snippets/fastcgi-php.conf;
+        fastcgi_pass unix:/run/php/php{{ php_fpm_version }}-fpm.sock;
+    }
+
+    {% for ip in phpmyadmin_allowed_ips %}
+    allow {{ ip }};
+    {% endfor %}
+    deny all;
+
+    location ~ /\.ht {
+        deny all;
+    }
+}

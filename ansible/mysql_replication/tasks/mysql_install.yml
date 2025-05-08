@@ -1,0 +1,56 @@
+# @format
+- name: Ensure python3-pymysql is installed (for Ansible MySQL modules)
+  apt:
+    name: python3-pymysql
+    state: present
+    update_cache: yes
+
+- name: Install MySQL Server
+  apt:
+    name: mysql-server
+    state: present
+    update_cache: yes
+
+- name: Install MySQL Client
+  apt:
+    name: mysql-client
+    state: present
+    update_cache: yes
+  when: "'mysql_clone' in group_names"
+
+- name: Ensure MySQL is started
+  service:
+    name: mysql
+    state: started
+    enabled: yes
+
+- name: Ensure database {{ test_db_name }} exists
+  community.mysql.mysql_db:
+    name: "{{ test_db_name }}"
+    state: present
+    login_user: root
+    login_unix_socket: /var/run/mysqld/mysqld.sock
+
+- name: Create MySQL user {{ mysql_username }}@{{ mysql_user_host_localhost }}
+  community.mysql.mysql_user:
+    name: "{{ mysql_username }}"
+    password: "{{ mysql_password }}"
+    host: "{{ mysql_user_host_localhost }}"
+    priv: "*.*:ALL,GRANT"
+    state: present
+    login_user: root
+    #login_password: "{{ mysql_root_password }}"
+    # atau jika root MySQL tanpa password, bisa hilangkan login_password
+    login_unix_socket: /var/run/mysqld/mysqld.sock
+
+- name: Create MySQL user {{ bastion_user }}@{{ bastion_private_ip }}
+  community.mysql.mysql_user:
+    name: "{{ bastion_user }}"
+    password: "{{ bastion_password }}"
+    host: "{{ bastion_private_ip }}"
+    priv: "*.*:ALL,GRANT"
+    state: present
+    login_user: root
+    #login_password: "{{ mysql_root_password }}"
+    # atau jika root MySQL tanpa password, bisa hilangkan login_password
+    login_unix_socket: /var/run/mysqld/mysqld.sock
