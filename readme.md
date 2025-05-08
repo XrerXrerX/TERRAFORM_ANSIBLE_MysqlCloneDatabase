@@ -88,6 +88,8 @@ Split phpMyAdmin and Bastion host into different instances for **modular securit
 
 ---
 
+![phpmyadmin output](./docs/phpmyadmin.jpg)
+
 ## 🧪 Deployment Flow
 
 ### Terraform
