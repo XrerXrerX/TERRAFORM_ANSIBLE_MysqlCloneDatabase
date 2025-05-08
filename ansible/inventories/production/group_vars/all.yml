@@ -19,14 +19,14 @@ bastion_user: bastion_user
 bastion_password: bastion_password
 bastion_private_ip: YourBastionPrivateIp # bastion private ip
 
-mysql_source_private_ip: YourPrivaeMysqlMaster # Output dari Terraform ip source node
+mysql_source_private_ip: YourPrivateMysqlMaster # Output dari Terraform ip source node
 
 #db master
 test_db_name: test_db #yourDatabase
 
 # vars file for phpmyadmin
-private_ip_mysql: 10.0.2.17 # your private ip mysql master
-private_ip_mysql_second: 10.0.3.217 #your orivate ip mysql clone
+private_ip_mysql: YourPrivateMysqlMaster # your private ip mysql master
+private_ip_mysql_second: YourPrivateMysqlclone #your private ip mysql clone
 php_fpm_version: "8.3" #php_version
 
 phpmyadmin_allowed_ips:

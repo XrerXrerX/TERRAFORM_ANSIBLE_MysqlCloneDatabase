@@ -129,6 +129,8 @@ mysql_source_private_ip = "10.0.2.xxx"
 mysql_clone_private_ip  = "10.0.3.xxx"
 ```
 
+![teraform output](./docs/terraform_output.jpg)
+
 Use these to configure **Ansible inventories** and **phpMyAdmin MySQL targets**.
 
 ---
@@ -137,7 +139,6 @@ Use these to configure **Ansible inventories** and **phpMyAdmin MySQL targets**.
 
 - `terraform/` – VPC, EC2, Subnets, SG
 - `ansible/roles/mysql_replication` – Install + Setup Replication
-- `ansible/roles/phpmyadmin` – GUI config via Nginx
 - `docs/` – \[Add diagram.png of architecture here]
 
 ---

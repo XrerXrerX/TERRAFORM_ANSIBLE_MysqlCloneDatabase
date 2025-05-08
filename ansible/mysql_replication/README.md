@@ -68,6 +68,8 @@ User → Bastion (Nginx + phpMyAdmin) → MySQL Master
 
 ---
 
+![master replication success](../../docs/master_slave_node.jpg)
+
 ## 📘 Ansible Usage Guide
 
 ### 1. Update Inventory
@@ -117,6 +119,8 @@ MASTER_LOG_POS = <MASTER_LOG_POS>;
 
 START SLAVE;
 ```
+
+![clone replication success](../../docs/master_mysql_node.jpg)
 
 ### 5. Install phpMyAdmin + Nginx Proxy
 
