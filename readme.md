@@ -149,7 +149,3 @@ Use these to configure **Ansible inventories** and **phpMyAdmin MySQL targets**.
 
 Created by \[XrerXrerX] – DevOps Engineer & Full Stack Developer
 Specializing in automated cloud deployments & database reliability.
-
----
-
-Let me know if you'd like me to generate an **SVG infrastructure diagram** based on your Terraform config.
